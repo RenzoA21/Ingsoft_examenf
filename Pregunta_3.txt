@@ -1,0 +1,85 @@
+
+### Pregunta 3: Cambio de software para soportar un valor máximo de 200 soles a transferir por día
+
+#### Cambios en el Código
+
+Para implementar un límite de transferencia diaria, debemos agregar un nuevo atributo a la clase `Cuenta` para rastrear el monto transferido en el día. Además, se necesita un método para reiniciar el monto diario al inicio de cada día.
+
+**Clase `Cuenta`**:
+- Nuevo atributo: `monto_diario_transferido`
+- Nuevo método: `reiniciar_monto_diario`
+
+**Modificación del método `transferir`**:
+- Verificación del límite diario antes de realizar la transferencia.
+
+```python
+class Cuenta:
+    def __init__(self, numero, nombre, saldo, contactos):
+        self.numero = numero
+        self.nombre = nombre
+        self.saldo = saldo
+        self.contactos = contactos
+        self.historial = []
+        self.monto_diario_transferido = 0
+        self.fecha_ultima_transferencia = datetime.now().date()
+
+    def reiniciar_monto_diario(self):
+        if self.fecha_ultima_transferencia != datetime.now().date():
+            self.monto_diario_transferido = 0
+            self.fecha_ultima_transferencia = datetime.now().date()
+
+    def transferir(self, destino, valor):
+        self.reiniciar_monto_diario()
+        if self.monto_diario_transferido + valor > 200:
+            return False
+        if self.saldo >= valor:
+            self.saldo -= valor
+            destino.saldo += valor
+            self.monto_diario_transferido += valor
+            self.historial.append(f"Pago realizado de {valor} a {destino.nombre}")
+            destino.historial.append(f"Pago recibido de {valor} de {self.nombre}")
+            return True
+        return False
+```
+
+#### Nuevos Casos de Prueba
+
+1. **Transferencia exitosa dentro del límite diario**.
+2. **Error al superar el límite diario de 200 soles**.
+3. **Reinicio del límite diario al cambiar de día**.
+
+**Nuevas pruebas unitarias**:
+
+```python
+def test_transferir_exito_dentro_limite(self):
+    cuenta_origen = buscar_cuenta("21345")
+    cuenta_destino = buscar_cuenta("123")
+    resultado = cuenta_origen.transferir(cuenta_destino, 100)
+    self.assertTrue(resultado)
+    resultado = cuenta_origen.transferir(cuenta_destino, 50)
+    self.assertTrue(resultado)
+    self.assertEqual(cuenta_origen.saldo, 50)
+    self.assertEqual(cuenta_destino.saldo, 550)
+
+def test_transferir_error_limite_diario(self):
+    cuenta_origen = buscar_cuenta("21345")
+    cuenta_destino = buscar_cuenta("123")
+    cuenta_origen.transferir(cuenta_destino, 150)
+    resultado = cuenta_origen.transferir(cuenta_destino, 100)
+    self.assertFalse(resultado)
+    self.assertEqual(cuenta_origen.saldo, 50)
+    self.assertEqual(cuenta_destino.saldo, 550)
+
+def test_reiniciar_limite_diario(self):
+    cuenta_origen = buscar_cuenta("21345")
+    cuenta_destino = buscar_cuenta("123")
+    cuenta_origen.transferir(cuenta_destino, 150)
+    cuenta_origen.fecha_ultima_transferencia -= timedelta(days=1)  # Simular cambio de día
+    cuenta_origen.reiniciar_monto_diario()
+    resultado = cuenta_origen.transferir(cuenta_destino, 100)
+    self.assertTrue(resultado)
+    self.assertEqual(cuenta_origen.saldo, 50)
+    self.assertEqual(cuenta_destino.saldo, 650)
+```
+
+Con estos cambios y pruebas, el software ahora soportará un límite máximo de 200 soles por día para transferencias. Además, las pruebas unitarias verificarán que esta funcionalidad se implemente correctamente y que no haya errores introducidos en la funcionalidad existente.
